@@ -3,20 +3,12 @@ package cn.edu.sdu.orz.service;
 import cn.edu.sdu.orz.dao.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import cn.edu.sdu.orz.dao.PermGroupRepository;
-import cn.edu.sdu.orz.po.PermGroup;
 import cn.edu.sdu.orz.po.User;
 
 @Service
 public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepo;
-    @Autowired
-    private PermGroupRepository permGroupRepo;
-
-    private PermGroup getDefaultGroup() {
-        return permGroupRepo.findById(1).orElseThrow();
-    }
 
     @Override
     public User getUser(Integer id) {
@@ -41,7 +33,7 @@ public class UserServiceImpl implements UserService {
             user.setRawPassword(password);
             user.setNickname(nickname);
             user.setEmail(email);
-            user.setPermGroup(getDefaultGroup());
+            user.setType("user");
             userRepo.save(user);
             return true;
         } catch (Exception e) {

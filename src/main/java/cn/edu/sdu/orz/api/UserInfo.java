@@ -4,13 +4,13 @@ public class UserInfo {
     private String username;
     private String nickname;
     private String email;
-    private String PermGroup;
+    private String type;
 
-    public UserInfo(String username, String nickname, String email, String permGroup) {
+    public UserInfo(String username, String nickname, String email, String type) {
         this.username = username;
         this.nickname = nickname;
         this.email = email;
-        PermGroup = permGroup;
+        this.type = type;
     }
 
     public String getUsername() {
@@ -37,11 +37,11 @@ public class UserInfo {
         this.email = email;
     }
 
-    public String getPermGroup() {
-        return PermGroup;
+    public String getType() {
+        return type;
     }
 
-    public void setPermGroup(String permGroup) {
-        PermGroup = permGroup;
+    public void setType(String type) {
+        this.type = type;
     }
 }

@@ -1,20 +1,17 @@
 package cn.edu.sdu.orz.po;
 
-import org.hibernate.annotations.DynamicInsert;
-import org.hibernate.annotations.DynamicUpdate;
 import org.springframework.util.DigestUtils;
 
 import javax.persistence.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "user")
-@DynamicUpdate
-@DynamicInsert
 public class User {
     private static final String salt = "neR>:Uum|-H+TPGN";
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -32,12 +29,15 @@ public class User {
     @Column(name = "nickname", nullable = false, length = 16)
     private String nickname;
 
-    @Column(name = "create_date")
-    private Instant createDate;
+    @Lob
+    @Column(name = "type", nullable = false)
+    private String type;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "perm_group", nullable = false)
-    private PermGroup permGroup;
+    @Column(name = "created")
+    private Instant created;
+
+    @OneToMany(mappedBy = "author")
+    private Set<Article> articles = new LinkedHashSet<>();
 
     public Integer getId() {
         return id;
@@ -59,12 +59,12 @@ public class User {
         return password;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
     public void setRawPassword(String raw) {
         this.password = getHashedPassword(raw);
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public String getEmail() {
@@ -83,22 +83,29 @@ public class User {
         this.nickname = nickname;
     }
 
-    public Instant getCreateDate() {
-        return createDate;
+    public String getType() {
+        return type;
     }
 
-    public void setCreateDate(Instant createDate) {
-        this.createDate = createDate;
+    public void setType(String type) {
+        this.type = type;
     }
 
-    public PermGroup getPermGroup() {
-        return permGroup;
+    public Instant getCreated() {
+        return created;
     }
 
-    public void setPermGroup(PermGroup permGroup) {
-        this.permGroup = permGroup;
+    public void setCreated(Instant created) {
+        this.created = created;
     }
 
+    public Set<Article> getArticles() {
+        return articles;
+    }
+
+    public void setArticles(Set<Article> articles) {
+        this.articles = articles;
+    }
 
     public static String getHashedPassword(String raw) {
         return DigestUtils.md5DigestAsHex((salt + raw + salt).getBytes(StandardCharsets.UTF_8));

@@ -58,7 +58,7 @@ public class UserController {
             User user = userService.getUser((Integer) session.getAttribute("user"));
             if (user != null) {
                 return new DataResponse(true, "", new UserInfo(user.getUsername(), user.getNickname(),
-                        user.getEmail(), user.getPermGroup().getName()));
+                        user.getEmail(), user.getType()));
             }
         }
         return new DataResponse(false, "Not logged in", null);
