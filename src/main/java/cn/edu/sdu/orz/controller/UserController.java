@@ -42,7 +42,7 @@ public class UserController {
         }
     }
 
-    @PostMapping(path="/logout")
+    @GetMapping(path="/logout")
     public ApiResponse logout(HttpSession session) {
         if (session.getAttribute("user") != null) {
             session.removeAttribute("user");
@@ -62,5 +62,34 @@ public class UserController {
             }
         }
         return new DataResponse(false, "Not logged in", null);
+    }
+
+    @GetMapping(path="/info/{username}")
+    public DataResponse info(HttpSession session, @PathVariable("username") String username) {
+        if(session.getAttribute("user") != null) {
+            User user = userService.getUser(username);
+            if(user != null) {
+                return new DataResponse(true, "", new UserInfo(user.getUsername(), user.getNickname(),
+                        user.getEmail(), user.getType()));
+            }
+            else {
+                return new DataResponse(false, "Can't find user with username " + username, null);
+            }
+        }
+        return new DataResponse(false, "Not logged in", null);
+    }
+
+    @PostMapping(path="/modify")
+    public ApiResponse modify(HttpSession session) {
+        if(session.getAttribute("user") != null) {
+            User admin = userService.getUser((Integer) session.getAttribute("user"));
+            if(!(admin.getType().equals("admin"))) {
+                return new SimpleResponse(false, "此账号类型不是管理员");
+            }
+            else {
+                return new SimpleResponse(true, "");
+            }
+        }
+        return new SimpleResponse(false, "Not logged in");
     }
 }
