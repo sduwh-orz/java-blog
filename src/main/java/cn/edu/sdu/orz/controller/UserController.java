@@ -92,4 +92,28 @@ public class UserController {
         }
         return new SimpleResponse(false, "Not logged in");
     }
+
+    @GetMapping(path="/delete/{username}")
+    public DataResponse delete(HttpSession session, @PathVariable("username") String username) {
+        if(session.getAttribute("user") != null) {
+            User admin = userService.getUser((Integer) session.getAttribute("user"));
+            if(!(admin.getType().equals("admin"))) {
+                return new DataResponse(false, "此账号类型不是管理员", "null");
+            }
+            else {
+                User user = userService.getUser(username);
+                if(user == null || user.getType().equals("deleted")) {
+                    return new DataResponse(false, "Can't delete user who doesn't exist!", "null");
+                }
+                if(user.getUsername().equals(admin.getUsername())) {
+                    return new DataResponse(false, "Can't delete yourself!", "null");
+                }
+                if(userService.deleteUser(username)) {
+                    return new DataResponse(true, "Delete user with username " +
+                            username + " successfully!", "null");
+                }
+            }
+        }
+        return new DataResponse(false, "Not logged in", "null");
+    }
 }

@@ -28,6 +28,17 @@ public class UserServiceImpl implements UserService {
     @Override
     public Boolean createUser(String username, String password, String nickname, String email) {
         try {
+            // Check if exists a user whose username equals input and type equals "deleted"
+            User prevUser = userRepo.findByUsername(username);
+            if(prevUser != null) {
+                if(prevUser.getType().equals("deleted")) {
+                    userRepo.deleteById(prevUser.getId());
+                }
+                else {
+                    return false;
+                }
+            }
+            // create
             User user = new User();
             user.setUsername(username);
             user.setRawPassword(password);
@@ -36,6 +47,22 @@ public class UserServiceImpl implements UserService {
             user.setType("user");
             userRepo.save(user);
             return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public Boolean deleteUser(String username) {
+        try {
+            User user = userRepo.findByUsername(username);
+            if(user != null) {
+                if(user.getType().equals("deleted")) {
+                    return false;
+                }
+                userRepo.updateType("deleted", user.getId());
+                return true;
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

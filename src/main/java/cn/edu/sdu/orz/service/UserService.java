@@ -7,4 +7,5 @@ public interface UserService {
     User getUser(String username);
     User getUser(String username, String password);
     Boolean createUser(String username, String password, String nickname, String email);
+    Boolean deleteUser(String username);
 }
