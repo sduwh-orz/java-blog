@@ -3,6 +3,7 @@ package cn.edu.sdu.orz.po;
 import org.springframework.util.DigestUtils;
 
 import javax.persistence.*;
+import javax.validation.constraints.Email;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.LinkedHashSet;
@@ -24,6 +25,7 @@ public class User {
     private String password;
 
     @Column(name = "email", nullable = false, length = 64)
+    @Email(regexp = "[a-zA-Z0-9_\\-]+@[a-zA-Z0-9_\\-]+(\\.[a-zA-Z0-9_\\-]+)+")
     private String email;
 
     @Column(name = "nickname", nullable = false, length = 16)
