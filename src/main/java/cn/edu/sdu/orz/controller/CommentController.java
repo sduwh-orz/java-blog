@@ -35,9 +35,9 @@ public class CommentController {
         return new DataResponse(true, "", null);
     }
 
-    @GetMapping(path="/get/{articleId}")
-    public DataResponse get(@PathVariable("articleId") String Id) {
-        Integer id = Integer.valueOf(Id);
+    @GetMapping(path="/get")
+    public DataResponse get(@RequestParam String articleId) {
+        Integer id = Integer.valueOf(articleId);
         List<Comment> lst = commentService.getCommentsByArticleId(id);
         if(lst.isEmpty()) {
             return new DataResponse(false, "nothing found", null);
@@ -47,38 +47,53 @@ public class CommentController {
                 lst.stream().map(Comment::getId).collect(Collectors.toList())
                 );
     }
+
     @PostMapping(path="/create")
     public ApiResponse create(HttpSession session, @RequestParam String articleId,
-                              @RequestParam String ipAddr, @RequestParam String content) {
-        Integer id = Integer.valueOf(articleId);
+                              @RequestParam String ipAddr, @RequestParam String content,
+                              @RequestParam(required = false) String parent) {
+        Integer article = Integer.valueOf(articleId);
+        Integer comment;
+        if(parent != null) {
+            comment = Integer.valueOf(parent);
+        }
+        else {
+            comment = null;
+        }
         if(session.getAttribute("user") != null) {
             User user = userService.getUser((Integer) session.getAttribute("user"));
             if(user != null) {
-                if(commentService.createComment(user, id, ipAddr, content)) {
-                    return new SimpleResponse(true, "");
+                if (comment != null) {
+                    if (commentService.createComment(user, article, ipAddr, content, comment)) {
+                        return new SimpleResponse(true, "");
+                    } else {
+                        return new SimpleResponse(false, "Exists a same comment which created by you");
+                    }
                 }
                 else {
-                    return new SimpleResponse(false, "Exists a same comment which created by you");
+                    if (commentService.createComment(user, article, ipAddr, content)) {
+                        return new SimpleResponse(true, "");
+                    } else {
+                        return new SimpleResponse(false, "Exists a same comment which created by you");
+                    }
                 }
             }
         }
         return new SimpleResponse(false, "not logged in");
     }
 
-    @PostMapping(path="/create/{commentId}")
-    public ApiResponse create(HttpSession session, @RequestParam String articleId,
-                              @RequestParam String ipAddr, @RequestParam String content,
-                              @PathVariable("commentId") String Id) {
-        Integer article = Integer.valueOf(articleId);
-        Integer comment = Integer.valueOf(Id);
+    @PostMapping(path="/modify")
+    public ApiResponse modify(HttpSession session, @RequestParam String commentId,
+                              @RequestParam String content) {
+        Integer id = Integer.valueOf(commentId);
         if(session.getAttribute("user") != null) {
             User user = userService.getUser((Integer) session.getAttribute("user"));
             if(user != null) {
-                if(commentService.createComment(user, article, ipAddr, content, comment)) {
+                if(commentService.modifyComment(user, id, content)) {
                     return new SimpleResponse(true, "");
                 }
                 else {
-                    return new SimpleResponse(false, "Exists a same comment which created by you");
+                    return new SimpleResponse(false, "You are not the author of this comment");
                 }
             }
         }

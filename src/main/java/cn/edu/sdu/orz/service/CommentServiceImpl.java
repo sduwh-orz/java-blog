@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class CommentServiceImpl implements CommentService{
+public class CommentServiceImpl implements CommentService {
     @Autowired
     private CommentRepository commentRepository;
 
@@ -25,9 +25,8 @@ public class CommentServiceImpl implements CommentService{
     public List<Comment> getCommentsByArticleId(Integer id) {
         List<Comment> all = commentRepository.findAll();
         List<Comment> sel = new ArrayList<>();
-        for(Comment c: all)
-        {
-            if(Objects.equals(c.getArticle().getId(), id))
+        for (Comment c : all) {
+            if (Objects.equals(c.getArticle().getId(), id))
                 sel.add(c);
         }
         return sel;
@@ -38,18 +37,17 @@ public class CommentServiceImpl implements CommentService{
         try {
             Integer authorId = user.getId();
             Article article = articleRepository.findById(id).orElse(null);
-            if(article == null) {
+            if (article == null) {
                 return false;
             }
             //check if exists a comment which authorId equals, ip equals,
-            // parents equals and type equals "deleted"
+            // content equals and type equals "deleted"
             Comment prevComment = commentRepository.findByIdAndAuthorAndIpAndContent(article, user, ipAddr, content);
-            if(prevComment != null) {
-                if(prevComment.getStatus().equals("deleted")) {
+            if (prevComment != null) {
+                if (prevComment.getStatus().equals("deleted")) {
                     commentRepository.updateStatusById("normal", prevComment.getId());
                     return true;
-                }
-                else {
+                } else {
                     return false;
                 }
             }
@@ -76,18 +74,17 @@ public class CommentServiceImpl implements CommentService{
             Integer authorId = user.getId();
             Article article = articleRepository.findById(commentId).orElse(null);
             Comment parentComment = commentRepository.findById(commentId).orElse(null);
-            if(article == null) {
+            if (article == null) {
                 return false;
             }
             //check if exists a comment which authorId equals, ip equals,
-            // parents equals and type equals "deleted"
+            // content equals, parents equals and type equals "deleted"
             Comment prevComment = commentRepository.findByArticleAndAuthorAndIpAndContentAndParent(article, user, ipAddr, content, parentComment);
-            if(prevComment != null) {
-                if(prevComment.getStatus().equals("deleted")) {
+            if (prevComment != null) {
+                if (prevComment.getStatus().equals("deleted")) {
                     commentRepository.updateStatusById("normal", prevComment.getId());
                     return true;
-                }
-                else {
+                } else {
                     return false;
                 }
             }
@@ -102,6 +99,24 @@ public class CommentServiceImpl implements CommentService{
             comment.setEmail(user.getEmail());
             comment.setParent(parentComment);
             commentRepository.save(comment);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
+    public Boolean modifyComment(User user, Integer id, String content) {
+        try {
+            Comment comment = commentRepository.findById(id).orElse(null);
+            if (comment == null) {
+                return false;
+            }
+            if (!comment.getAuthor().getId().equals(user.getId())) {
+                return false;
+            }
+            commentRepository.updateContentById(content, id);
             return true;
         } catch (Exception e) {
             e.printStackTrace();

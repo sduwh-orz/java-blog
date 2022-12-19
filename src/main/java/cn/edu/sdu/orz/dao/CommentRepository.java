@@ -9,6 +9,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface CommentRepository extends JpaRepository<Comment, Integer> {
+    @Transactional
+    @Modifying
+    @Query("update Comment c set c.content = ?1 where c.id = ?2")
+    int updateContentById(String content, Integer id);
     @Query("select c from Comment c " +
             "where c.article = ?1 and c.author = ?2 and c.ip = ?3 and c.content = ?4 and c.parent = ?5")
     Comment findByArticleAndAuthorAndIpAndContentAndParent(Article article, User author, String ip, String content, Comment parent);

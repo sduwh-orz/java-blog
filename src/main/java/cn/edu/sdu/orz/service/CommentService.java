@@ -11,4 +11,6 @@ public interface CommentService {
     Boolean createComment(User user, Integer id, String ipAddr, String content);
 
     Boolean createComment(User user, Integer articleId, String ipAddr, String content, Integer commentId);
+
+    Boolean modifyComment(User user, Integer id, String content);
 }

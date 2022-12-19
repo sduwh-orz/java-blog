@@ -53,27 +53,23 @@ public class UserController {
     }
 
     @GetMapping(path="/info")
-    public DataResponse info(HttpSession session) {
-        if (session.getAttribute("user") != null) {
-            User user = userService.getUser((Integer) session.getAttribute("user"));
-            if (user != null) {
-                return new DataResponse(true, "", new UserInfo(user.getUsername(), user.getNickname(),
-                        user.getEmail(), user.getType()));
-            }
-        }
-        return new DataResponse(false, "Not logged in", null);
-    }
-
-    @GetMapping(path="/info/{username}")
-    public DataResponse info(HttpSession session, @PathVariable("username") String username) {
+    public DataResponse info(HttpSession session, @RequestParam(required = false) String username) {
         if(session.getAttribute("user") != null) {
-            User user = userService.getUser(username);
-            if(user != null) {
-                return new DataResponse(true, "", new UserInfo(user.getUsername(), user.getNickname(),
-                        user.getEmail(), user.getType()));
+            if(username != null) {
+                User user = userService.getUser(username);
+                if (user != null) {
+                    return new DataResponse(true, "", new UserInfo(user.getUsername(), user.getNickname(),
+                            user.getEmail(), user.getType()));
+                } else {
+                    return new DataResponse(false, "Can't find user with username " + username, null);
+                }
             }
             else {
-                return new DataResponse(false, "Can't find user with username " + username, null);
+                User user = userService.getUser((Integer) session.getAttribute("user"));
+                if (user != null) {
+                    return new DataResponse(true, "", new UserInfo(user.getUsername(), user.getNickname(),
+                            user.getEmail(), user.getType()));
+                }
             }
         }
         return new DataResponse(false, "Not logged in", null);
@@ -93,8 +89,8 @@ public class UserController {
         return new SimpleResponse(false, "Not logged in");
     }
 
-    @GetMapping(path="/delete/{username}")
-    public DataResponse delete(HttpSession session, @PathVariable("username") String username) {
+    @GetMapping(path="/delete")
+    public DataResponse delete(HttpSession session, @RequestParam String username) {
         if(session.getAttribute("user") != null) {
             User admin = userService.getUser((Integer) session.getAttribute("user"));
             if(!(admin.getType().equals("admin"))) {
