@@ -1,6 +1,11 @@
 package cn.edu.sdu.orz.po;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import javax.persistence.*;
+import javax.validation.Constraint;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.Pattern;
 import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -25,9 +30,11 @@ public class Comment {
     private String authorName;
 
     @Column(name = "email", nullable = false, length = 200)
+    @Email(regexp = "[a-zA-Z0-9_\\-]+@[a-zA-Z0-9_\\-]+(\\.[a-zA-Z0-9_\\-]+)+")
     private String email;
 
     @Column(name = "ip", nullable = false, length = 64)
+    @Pattern(regexp = "^(\\d{1,3}\\.){3}\\d{1,3}$")
     private String ip;
 
     @Lob

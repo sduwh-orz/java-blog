@@ -32,7 +32,8 @@ public class UserServiceImpl implements UserService {
             User prevUser = userRepo.findByUsername(username);
             if(prevUser != null) {
                 if(prevUser.getType().equals("deleted")) {
-                    userRepo.deleteById(prevUser.getId());
+                    userRepo.updateType("normal", prevUser.getId());
+                    return true;
                 }
                 else {
                     return false;
