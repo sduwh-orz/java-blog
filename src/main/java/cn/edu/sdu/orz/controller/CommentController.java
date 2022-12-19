@@ -1,5 +1,6 @@
 package cn.edu.sdu.orz.controller;
 
+import cn.edu.sdu.orz.api.ApiResponse;
 import cn.edu.sdu.orz.api.DataResponse;
 import cn.edu.sdu.orz.filter.CORSFilter;
 import cn.edu.sdu.orz.service.CommentService;
@@ -9,11 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
@@ -42,7 +39,4 @@ public class CommentController {
                 lst.stream().map(Comment::getId).collect(Collectors.toList())
                 );
     }
-
-    
-    
 }
