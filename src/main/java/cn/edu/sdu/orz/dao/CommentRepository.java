@@ -11,6 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 public interface CommentRepository extends JpaRepository<Comment, Integer> {
     @Transactional
     @Modifying
+    @Query("update Comment c set c.likeNum = ?1 where c.id = ?2")
+    int updateLikeNumById(Integer likeNum, Integer id);
+    @Transactional
+    @Modifying
     @Query("update Comment c set c.content = ?1 where c.id = ?2")
     int updateContentById(String content, Integer id);
     @Query("select c from Comment c " +

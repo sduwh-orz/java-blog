@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import javax.persistence.*;
 import javax.validation.Constraint;
 import javax.validation.constraints.Email;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import java.time.Instant;
 import java.util.LinkedHashSet;
@@ -55,8 +56,21 @@ public class Comment {
     @Column(name = "modified")
     private Instant modified;
 
+    @NotNull
+    @Column(name = "like_num", nullable = false)
+    private Integer likeNum;
+
     @OneToMany(mappedBy = "parent")
     private Set<Comment> comments = new LinkedHashSet<>();
+
+
+    public Integer getLikeNum() {
+        return likeNum;
+    }
+
+    public void setLikeNum(Integer likeNum) {
+        this.likeNum = likeNum;
+    }
 
     public Integer getId() {
         return id;

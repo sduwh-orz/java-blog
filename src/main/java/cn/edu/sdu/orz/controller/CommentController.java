@@ -9,6 +9,7 @@ import cn.edu.sdu.orz.service.CommentService;
 import cn.edu.sdu.orz.po.Comment;
 
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import cn.edu.sdu.orz.service.UserService;
@@ -37,6 +38,10 @@ public class CommentController {
 
     @GetMapping(path="/get")
     public DataResponse get(@RequestParam String articleId) {
+        Pattern pattern = Pattern.compile("[0-9]*");
+        if(!(pattern.matcher(articleId).matches())) {
+            return new DataResponse(false, "not a valid articleId", null);
+        }
         Integer id = Integer.valueOf(articleId);
         List<Comment> lst = commentService.getCommentsByArticleId(id);
         if(lst.isEmpty()) {
@@ -52,6 +57,10 @@ public class CommentController {
     public ApiResponse create(HttpSession session, @RequestParam String articleId,
                               @RequestParam String ipAddr, @RequestParam String content,
                               @RequestParam(required = false) String parent) {
+        Pattern pattern = Pattern.compile("[0-9]*");
+        if(!(pattern.matcher(articleId).matches())) {
+            return new DataResponse(false, "not a valid articleId", null);
+        }
         Integer article = Integer.valueOf(articleId);
         Integer comment;
         if(parent != null) {
@@ -85,6 +94,10 @@ public class CommentController {
     @PostMapping(path="/modify")
     public ApiResponse modify(HttpSession session, @RequestParam String commentId,
                               @RequestParam String content) {
+        Pattern pattern = Pattern.compile("[0-9]*");
+        if(!(pattern.matcher(commentId).matches())) {
+            return new DataResponse(false, "not a valid commentId", null);
+        }
         Integer id = Integer.valueOf(commentId);
         if(session.getAttribute("user") != null) {
             User user = userService.getUser((Integer) session.getAttribute("user"));
@@ -93,10 +106,44 @@ public class CommentController {
                     return new SimpleResponse(true, "");
                 }
                 else {
-                    return new SimpleResponse(false, "You are not the author of this comment");
+                    return new SimpleResponse(false, "You are not the author of this comment or the comment doesn't exist");
                 }
             }
         }
         return new SimpleResponse(false, "not logged in");
+    }
+
+    @GetMapping(path="/delete")
+    public DataResponse delete(HttpSession session, @RequestParam String commentId) {
+        Pattern pattern = Pattern.compile("[0-9]*");
+        if(!(pattern.matcher(commentId).matches())) {
+            return new DataResponse(false, "not a valid commentId", null);
+        }
+        Integer id = Integer.valueOf(commentId);
+        if(session.getAttribute("user") != null) {
+            User user = userService.getUser((Integer) session.getAttribute("user"));
+            if(user != null) {
+                if(commentService.deleteComment(user, id)) {
+                    return new DataResponse(true, "delete successfully", "");
+                }
+                else {
+                    return new DataResponse(false, "You are not the author of this comment or article or the comment doesn't exist", null);
+                }
+            }
+        }
+        return new DataResponse(false, "not logged in", null);
+    }
+
+    @GetMapping(path="/like")
+    public DataResponse like(@RequestParam String commentId) {
+        Pattern pattern = Pattern.compile("[0-9]*");
+        if(!(pattern.matcher(commentId).matches())) {
+            return new DataResponse(false, "not a valid commentId", null);
+        }
+        Integer id = Integer.valueOf(commentId);
+        if(commentService.likeComment(id)) {
+            return new DataResponse(true, "like successfully", "");
+        }
+        return new DataResponse(false, "like failed", null);
     }
 }
