@@ -1,12 +1,20 @@
 package cn.edu.sdu.orz.po;
 
+import org.springframework.util.DigestUtils;
+
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 @Entity
 @Table(name = "file")
 public class File {
+
+    private static final String salt = "kBn?$>~&Opw$]v:f";
+
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
 
@@ -24,6 +32,22 @@ public class File {
 
     @Column(name = "created")
     private Instant created;
+
+    @NotNull
+    @Column(name = "user_id", nullable = false)
+    private Integer userId;
+
+    public Integer getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
+
+    public void setName(String name) {
+        this.md5 = getHashedName(name);
+    }
 
     public Integer getId() {
         return id;
@@ -65,4 +89,7 @@ public class File {
         this.created = created;
     }
 
+    public static String getHashedName(String name) {
+        return DigestUtils.md5DigestAsHex((salt + name + salt).getBytes(StandardCharsets.UTF_8));
+    }
 }

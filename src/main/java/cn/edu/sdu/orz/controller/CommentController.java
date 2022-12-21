@@ -31,11 +31,6 @@ public class CommentController {
     @Autowired
     private UserService userService;
 
-    @GetMapping(path="")
-    public DataResponse test() {
-        return new DataResponse(true, "", null);
-    }
-
     @GetMapping(path="/get")
     public DataResponse get(@RequestParam String articleId) {
         Pattern pattern = Pattern.compile("[0-9]*");
