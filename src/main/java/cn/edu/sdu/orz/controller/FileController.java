@@ -3,17 +3,22 @@ package cn.edu.sdu.orz.controller;
 import cn.edu.sdu.orz.api.ApiResponse;
 import cn.edu.sdu.orz.api.DataResponse;
 import cn.edu.sdu.orz.api.SimpleResponse;
+import cn.edu.sdu.orz.api.fileInfo;
+import cn.edu.sdu.orz.dao.ArticleRepository;
 import cn.edu.sdu.orz.dao.FileRepository;
-import cn.edu.sdu.orz.dao.UserRepository;
 import cn.edu.sdu.orz.filter.CORSFilter;
+import cn.edu.sdu.orz.po.Article;
 import cn.edu.sdu.orz.po.File;
 import cn.edu.sdu.orz.po.User;
 import cn.edu.sdu.orz.service.FileService;
+import cn.edu.sdu.orz.service.FileStorageService;
 import cn.edu.sdu.orz.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpSession;
+import java.util.List;
 import java.util.regex.Pattern;
 
 @RestController
@@ -30,22 +35,38 @@ public class FileController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private FileStorageService fileStorageService;
+
+    @Autowired
+    private FileRepository fileRepository;
+    @Autowired
+    private ArticleRepository articleRepository;
+
     @GetMapping(path = "/get")
     public DataResponse get(HttpSession session, @RequestParam String fileId) {
-        Pattern pattern = Pattern.compile("[0-9]*");
-        if(!(pattern.matcher(fileId).matches())) {
-            return new DataResponse(false, "not a valid fileId", null);
-        }
-        if(session.getAttribute("user") != null) {
-            User user = userService.getUser((Integer) session.getAttribute("user"));
-            Integer id = Integer.valueOf(fileId);
-            File file = fileService.findFile(id);
-            if(file != null) {
-                return new DataResponse(true, "", file.getMd5());
+        try {
+            Pattern pattern = Pattern.compile("[0-9]*");
+            if(!(pattern.matcher(fileId).matches())) {
+                return new DataResponse(false, "not a valid fileId", null);
             }
-            return new DataResponse(false, "cannot find the file", null);
+            if(session.getAttribute("user") != null) {
+                Integer id = Integer.valueOf(fileId);
+                File file = fileService.findFile(id);
+                if(file != null) {
+                    return new DataResponse(true, "", new fileInfo(
+                            file.getName(), file.getType(),
+                            userService.getUser(file.getUserId()).getUsername(),
+                            fileStorageService.get(file.getName(), file.getPath()).getURL()
+                    ));
+                }
+                return new DataResponse(false, "cannot find the file", null);
+            }
+            return new DataResponse(false, "not logged in", null);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        return new DataResponse(false, "not logged in", null);
+        return new DataResponse(false, "cannot open the file", null);
     }
 
     @PostMapping(path = "/create")
@@ -66,5 +87,54 @@ public class FileController {
             return new SimpleResponse(false, "create failed");
         }
         return new SimpleResponse(false, "not logged in");
+    }
+
+    @PostMapping(path = "/upload")
+    public ApiResponse upload(HttpSession session, @RequestParam MultipartFile file,
+                              @RequestParam String fileId) {
+        Pattern pattern = Pattern.compile("[0-9]*");
+        if(!(pattern.matcher(fileId).matches())) {
+            return new SimpleResponse(false, "not a valid fileId");
+        }
+        String type = (file.getContentType().contains("image")) ? "image" : "file";
+       if(session.getAttribute("user") != null) {
+           User user = userService.getUser((Integer) session.getAttribute("user"));
+           Integer id = Integer.valueOf(fileId);
+           File foundedFile = fileRepository.findById(id).orElse(null);
+           if(foundedFile == null) {
+               return new SimpleResponse(false, "fileId doesn't exist");
+           }
+           if(!foundedFile.getType().equals(type)) {
+               return new SimpleResponse(false, "type not equals");
+           }
+           if(fileService.uploadFile(user, file, id)) {
+               fileStorageService.upload(file, foundedFile.getPath());
+               return new SimpleResponse(true, "upload successfully");
+           }
+           return new SimpleResponse(false, "you're not the uploader of this file");
+       }
+       return new SimpleResponse(false, "not logged in");
+    }
+
+    @GetMapping(path = "/delete")
+    public DataResponse delete(HttpSession session, @RequestParam String fileId) {
+        Pattern pattern = Pattern.compile("[0-9]*");
+        if(!(pattern.matcher(fileId).matches())) {
+            return new DataResponse(false, "not a valid fileId", null);
+        }
+        if(session.getAttribute("user") != null) {
+            User user = userService.getUser((Integer) session.getAttribute("user"));
+            if(user.getType().equals("admin")) {
+                File foundedFile = fileRepository.findById(Integer.valueOf(fileId)).orElse(null);
+                if(foundedFile == null) {
+                    return new DataResponse(false, "cannot find the file", null);
+                }
+                fileStorageService.delete(foundedFile.getName(), foundedFile.getPath());
+                fileRepository.deleteById(Integer.valueOf(fileId));
+                return new DataResponse(true, "delete successfully", "");
+            }
+            return new DataResponse(false, "you're not an admin", null);
+        }
+        return new DataResponse(false, "not logged in", null);
     }
 }

@@ -147,5 +147,4 @@ public class Article {
     public void setComments(Set<Comment> comments) {
         this.comments = comments;
     }
-
 }

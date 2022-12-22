@@ -4,6 +4,7 @@ import org.springframework.util.DigestUtils;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
@@ -37,16 +38,25 @@ public class File {
     @Column(name = "user_id", nullable = false)
     private Integer userId;
 
+    @Size(max = 255)
+    @Column(name = "name")
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+        this.md5 = getHashedName(name);
+    }
+
     public Integer getUserId() {
         return userId;
     }
 
     public void setUserId(Integer userId) {
         this.userId = userId;
-    }
-
-    public void setName(String name) {
-        this.md5 = getHashedName(name);
     }
 
     public Integer getId() {

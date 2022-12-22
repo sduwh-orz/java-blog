@@ -4,6 +4,7 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 /src/main/resources/application-dev.properties
+/uploads/
 
 ### STS ###
 .apt_generated
@@ -32,4 +33,3 @@ build/
 
 ### VS Code ###
 .vscode/
-

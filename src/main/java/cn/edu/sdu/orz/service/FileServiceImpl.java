@@ -5,6 +5,9 @@ import cn.edu.sdu.orz.po.File;
 import cn.edu.sdu.orz.po.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Objects;
 
 @Service
 public class FileServiceImpl implements FileService{
@@ -31,5 +34,17 @@ public class FileServiceImpl implements FileService{
             e.printStackTrace();
         }
         return false;
+    }
+
+    @Override
+    public Boolean uploadFile(User user, MultipartFile file, Integer fileId) {
+        File findFile = fileRepository.findById(fileId).orElse(null);
+        if(!Objects.equals(findFile.getUserId(), user.getId())) {
+            return false;
+        }
+        String[] fileName = file.getOriginalFilename().split("\\.");
+        fileRepository.updateMd5ById(File.getHashedName(fileName[0]), fileId);
+        fileRepository.updateNameById(fileName[0] + "." + fileName[1], fileId);
+        return true;
     }
 }
