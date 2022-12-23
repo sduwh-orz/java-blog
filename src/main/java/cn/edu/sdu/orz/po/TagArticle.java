@@ -4,28 +4,18 @@ import javax.persistence.*;
 
 @Entity
 @Table(name = "tag_article")
+@IdClass(TagArticleId.class)
 public class TagArticle {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EmbeddedId
-    private TagArticleId id;
 
-    @MapsId("tag")
+    @Id
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "tag", nullable = false)
     private Tag tag;
 
-    @MapsId("article")
+    @Id
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "article", nullable = false)
     private Article article;
-
-    public TagArticleId getId() {
-        return id;
-    }
-
-    public void setId(TagArticleId id) {
-        this.id = id;
-    }
 
     public Tag getTag() {
         return tag;

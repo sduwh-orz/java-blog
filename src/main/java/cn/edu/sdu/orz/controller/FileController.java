@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpSession;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 @RestController
@@ -124,8 +125,8 @@ public class FileController {
         }
         if(session.getAttribute("user") != null) {
             User user = userService.getUser((Integer) session.getAttribute("user"));
-            if(user.getType().equals("admin")) {
-                File foundedFile = fileRepository.findById(Integer.valueOf(fileId)).orElse(null);
+            File foundedFile = fileRepository.findById(Integer.valueOf(fileId)).orElse(null);
+            if(user.getType().equals("admin") || Objects.equals(foundedFile.getUserId(), user.getId())) {
                 if(foundedFile == null) {
                     return new DataResponse(false, "cannot find the file", null);
                 }
@@ -136,5 +137,47 @@ public class FileController {
             return new DataResponse(false, "you're not an admin", null);
         }
         return new DataResponse(false, "not logged in", null);
+    }
+
+    @PostMapping(path = "/modify")
+    public ApiResponse modify(HttpSession session, @RequestParam String fileId, @RequestParam(required = false) String newFileName,
+                              @RequestParam(required = false) MultipartFile newFile) {
+        Pattern pattern = Pattern.compile("[0-9]*");
+        if(!(pattern.matcher(fileId).matches())) {
+            return new DataResponse(false, "not a valid fileId", null);
+        }
+        if(session.getAttribute("user") != null) {
+            User user = userService.getUser((Integer) session.getAttribute("user"));
+            File foundedFile = fileRepository.findById(Integer.valueOf(fileId)).orElse(null);
+            if(foundedFile == null) {
+                return new SimpleResponse(false, "cannot find the file");
+            }
+            if(user.getType().equals("admin") || Objects.equals(user.getId(), foundedFile.getUserId())) {
+                if(newFileName != null && newFile != null) {
+                    return new SimpleResponse(false, "you can't modify both file and filename");
+                }
+                if(newFileName != null) {
+                    String oldName = foundedFile.getName();
+                    if(fileService.modifyName(foundedFile, newFileName)) {
+                        fileStorageService.modifyName(newFileName, foundedFile, oldName);
+                    }
+                    else {
+                        return new SimpleResponse(false, "filename duplicate");
+                    }
+                }
+                if(newFile != null) {
+                    String oldName = foundedFile.getName();
+                    if(fileService.modifyFile(foundedFile, newFile)) {
+                        fileStorageService.modifyFile(newFile, foundedFile, oldName);
+                    }
+                    else {
+                        return new SimpleResponse(false, "type not equal or file duplicate");
+                    }
+                }
+                return new SimpleResponse(true, "modify successfully");
+            }
+            return new SimpleResponse(false, "you're neither admin nor this file's uploader");
+        }
+        return new SimpleResponse(false, "not logged in");
     }
 }

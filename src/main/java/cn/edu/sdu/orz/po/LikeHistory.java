@@ -1,37 +1,29 @@
 package cn.edu.sdu.orz.po;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.time.Instant;
 
 @Entity
+@IdClass(LikeHistoryId.class)
 @Table(name = "like_history")
 public class LikeHistory {
-    @EmbeddedId
-    private LikeHistoryId id;
 
-    @MapsId("article")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "article", nullable = false)
-    private Article article;
+    @NotNull
+    @Id
+    @Column(name = "article", nullable = false)
+    private Integer article;
 
-    @Column(name = "time")
+    @Id
+    @Size(max = 64)
+    @NotNull
+    @Column(name = "ip", nullable = false, length = 64)
+    private String ip;
+
+    @NotNull
+    @Column(name = "time", nullable = false)
     private Instant time;
-
-    public LikeHistoryId getId() {
-        return id;
-    }
-
-    public void setId(LikeHistoryId id) {
-        this.id = id;
-    }
-
-    public Article getArticle() {
-        return article;
-    }
-
-    public void setArticle(Article article) {
-        this.article = article;
-    }
 
     public Instant getTime() {
         return time;
@@ -41,4 +33,19 @@ public class LikeHistory {
         this.time = time;
     }
 
+    public String getIp() {
+        return ip;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
+    public Integer getArticle() {
+        return article;
+    }
+
+    public void setArticle(Integer article) {
+        this.article = article;
+    }
 }

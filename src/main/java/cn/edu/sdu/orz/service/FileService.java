@@ -10,4 +10,8 @@ public interface FileService {
     Boolean createFile(User user, String type, String parentArticleId);
 
     Boolean uploadFile(User user, MultipartFile file, Integer fileId);
+
+    Boolean modifyName(File foundedFile, String newFileName);
+
+    Boolean modifyFile(File foundedFile, MultipartFile newFile);
 }

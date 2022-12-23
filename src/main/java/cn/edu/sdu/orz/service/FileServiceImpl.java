@@ -10,7 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Objects;
 
 @Service
-public class FileServiceImpl implements FileService{
+public class FileServiceImpl implements FileService {
 
     @Autowired
     private FileRepository fileRepository;
@@ -45,6 +45,36 @@ public class FileServiceImpl implements FileService{
         String[] fileName = file.getOriginalFilename().split("\\.");
         fileRepository.updateMd5ById(File.getHashedName(fileName[0]), fileId);
         fileRepository.updateNameById(fileName[0] + "." + fileName[1], fileId);
+        return true;
+    }
+
+    @Override
+    public Boolean modifyName(File foundedFile, String newFileName) {
+        String[] fileName = newFileName.split("\\.");
+        if(fileRepository.existsByMd5(File.getHashedName(fileName[0]))) {
+            return false;
+        }
+        fileRepository.updateMd5ById(File.getHashedName(fileName[0]), foundedFile.getId());
+        fileRepository.updateNameById(fileName[0] + "." + fileName[1], foundedFile.getId());
+        return true;
+    }
+
+    @Override
+    public Boolean modifyFile(File foundedFile, MultipartFile newFile) {
+        String type = newFile.getContentType().contains("image") ? "image" : "file";
+        if(!type.equals(foundedFile.getType())) {
+            return false;
+        }
+        if(foundedFile.getName().equals(newFile.getOriginalFilename())) {
+            return false;
+        }
+        String newFileMd5 = File.getHashedName(newFile.getOriginalFilename().split("\\.")[0]);
+        if(fileRepository.existsByMd5(newFileMd5)) {
+            return false;
+        }
+        String[] fileName = newFile.getOriginalFilename().split("\\.");
+        fileRepository.updateMd5ById(File.getHashedName(fileName[0]), foundedFile.getId());
+        fileRepository.updateNameById(fileName[0] + "." + fileName[1], foundedFile.getId());
         return true;
     }
 }

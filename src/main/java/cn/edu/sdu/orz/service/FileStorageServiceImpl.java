@@ -2,11 +2,13 @@ package cn.edu.sdu.orz.service;
 
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.FileAlreadyExistsException;
@@ -56,6 +58,34 @@ public class FileStorageServiceImpl implements FileStorageService {
             FileSystemUtils.deleteRecursively(cur.resolve(filename));
         } catch (IOException e) {
             throw new RuntimeException("Could not delete file");
+        }
+    }
+
+    @Override
+    public void modifyName(String newFileName, cn.edu.sdu.orz.po.File foundedFile, String oldName) {
+        FileInputStream fileInputStream;
+        try {
+          Path cur = Paths.get("./uploads" + foundedFile.getPath());
+            fileInputStream =
+                    new FileInputStream("./uploads" + foundedFile.getPath() + "/" + oldName);
+          MultipartFile renamedFile = new MockMultipartFile(newFileName, fileInputStream);
+          fileInputStream.close();
+          Files.copy(renamedFile.getInputStream(), cur.resolve(newFileName));
+          new FileStorageServiceImpl().delete(foundedFile.getName(), foundedFile.getPath());
+        } catch (Exception e) {
+            throw new RuntimeException("cannot modify file name");
+        }
+    }
+
+    @Override
+    public void modifyFile(MultipartFile newFile, cn.edu.sdu.orz.po.File foundedFile, String oldName) {
+        try {
+            Path cur = Paths.get("./uploads" + foundedFile.getPath());
+            new FileStorageServiceImpl().delete(oldName, foundedFile.getPath());
+            Files.copy(newFile.getInputStream(), cur.resolve(newFile.getOriginalFilename()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("cannot modify file");
         }
     }
 }
