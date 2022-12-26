@@ -1,8 +1,12 @@
 package cn.edu.sdu.orz.api;
 
+import cn.edu.sdu.orz.po.Tag;
 import cn.edu.sdu.orz.po.User;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Set;
 
 public class ArticleInfo {
     private String title;
@@ -11,18 +15,20 @@ public class ArticleInfo {
     private Integer view;
     private String summary;
     private String content;
-
-    public ArticleInfo() {
-    }
+    private Set<String> tagNames;
+    @JsonProperty("recommendArticleId")
+    private List<Integer> recommendArticleIdList;
 
     public ArticleInfo(String title, String authorName, Instant modified, Integer view,
-                       String summary, String content) {
+                       String summary, String content, Set<String> tagNames, List<Integer> recommendArticleIdList) {
         this.title = title;
         this.authorName = authorName;
         this.modified = modified;
         this.view = view;
         this.summary = summary;
         this.content = content;
+        this.tagNames = tagNames;
+        this.recommendArticleIdList = recommendArticleIdList;
     }
 
     public String getAuthorName() {
@@ -71,5 +77,21 @@ public class ArticleInfo {
 
     public void setModified(Instant modified) {
         this.modified = modified;
+    }
+
+    public Set<String> getTagNames() {
+        return tagNames;
+    }
+
+    public void setTagNames(Set<String> tagNames) {
+        this.tagNames = tagNames;
+    }
+
+    public List<Integer> getRecommendArticleIdList() {
+        return recommendArticleIdList;
+    }
+
+    public void setRecommendArticleIdList(List<Integer> recommendArticleIdList) {
+        this.recommendArticleIdList = recommendArticleIdList;
     }
 }

@@ -1,18 +1,18 @@
 package cn.edu.sdu.orz.controller;
 
 import cn.edu.sdu.orz.api.*;
-import cn.edu.sdu.orz.dao.ArticleRepository;
-import cn.edu.sdu.orz.dao.UserRepository;
+import cn.edu.sdu.orz.dao.*;
 import cn.edu.sdu.orz.filter.CORSFilter;
-import cn.edu.sdu.orz.po.Article;
-import cn.edu.sdu.orz.po.User;
+import cn.edu.sdu.orz.po.*;
 import cn.edu.sdu.orz.service.ArticleService;
 import cn.edu.sdu.orz.service.ArticleServiceImpl;
+import cn.edu.sdu.orz.service.LikeHistoryService;
 import cn.edu.sdu.orz.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 import java.util.*;
@@ -31,7 +31,15 @@ public class ArticleController {
     @Autowired
     private UserService userService;
     @Autowired
-    private  UserRepository userRepository;
+    private UserRepository userRepository;
+    @Autowired
+    private LikeHistoryRepository likeHistoryRepository;
+    @Autowired
+    private LikeHistoryService likeHistoryService;
+    @Autowired
+    private TagRepository tagRepository;
+    @Autowired
+    private TagArticleRepository tagArticleRepository;
 
     public ArticleController(ArticleService articleService) {
         this.articleService = articleService;
@@ -45,6 +53,32 @@ public class ArticleController {
         if (foundArticle == null || foundArticle.getStatus().equals("deleted")) {
             return new DataResponse(false, "This article doesn't exist.", null);
         }
+        // Get relevant tags for this article.
+        Set<String> tagNames = new LinkedHashSet<>();
+        Iterator<Tag> it = foundArticle.getTags().iterator();
+        while (it.hasNext()) {
+            Tag tag = it.next();
+            tagNames.add(tag.getName());
+        }
+        // Randomly recommend articles with the same tag(s).
+        List<Integer> tagIdList = tagArticleRepository.getTagsByArticle(id);
+        List<Integer> articleIdList = new ArrayList<>();
+        for (int i = 0; i < Math.min(tagIdList.size(), 3); i++) {
+            Random random = new Random();
+            articleIdList.add(tagIdList.get(random.nextInt(tagIdList.size())));
+        }
+        Iterator<Integer> iterator = articleIdList.iterator();
+        Set<Integer> articleSet = new HashSet<>();
+        while (iterator.hasNext()) {
+            articleSet.addAll(tagArticleRepository.getArticlesByTag(iterator.next()));
+        }
+        articleSet.remove(id);
+        List<Integer> articleList = new ArrayList<>(articleSet);
+        List<Integer> recommendArticleIdList = new ArrayList<>();
+        for (int i = 0; i < Math.min(articleList.size(), 3); i++) {
+            recommendArticleIdList.add(articleList.get(i));
+        }
+        // Start working.
         if (session.getAttribute("user") == null) {
             if (foundArticle.getStatus().equals("normal")) {
                 articleRepository.updateView(id);
@@ -52,7 +86,7 @@ public class ArticleController {
                 return new DataResponse(true, null, new ArticleInfo(
                         foundArticle.getTitle(), foundArticle.getAuthor().getUsername(),
                         foundArticle.getModified(), foundArticle.getView(),
-                        foundArticle.getSummary(), foundArticle.getContent())
+                        foundArticle.getSummary(), foundArticle.getContent(), tagNames, recommendArticleIdList)
                 );
             } else if (foundArticle.getStatus().equals("hidden")) {
                 if (password.equals(foundArticle.getPassword())) {
@@ -61,7 +95,7 @@ public class ArticleController {
                     return new DataResponse(true, null, new ArticleInfo(
                             foundArticle.getTitle(), foundArticle.getAuthor().getUsername(),
                             foundArticle.getModified(), foundArticle.getView(),
-                            foundArticle.getSummary(), foundArticle.getContent())
+                            foundArticle.getSummary(), foundArticle.getContent(), tagNames, recommendArticleIdList)
                     );
                 } else {
                     return new DataResponse(false, "Password error.", null);
@@ -78,7 +112,7 @@ public class ArticleController {
                 return new DataResponse(true, null, new ArticleInfo(
                         foundArticle.getTitle(), foundArticle.getAuthor().getUsername(),
                         foundArticle.getModified(), foundArticle.getView(),
-                        foundArticle.getSummary(), foundArticle.getContent())
+                        foundArticle.getSummary(), foundArticle.getContent(), tagNames, recommendArticleIdList)
                 );
             }
         } else if (foundArticle.getStatus().equals("hidden")) {
@@ -90,7 +124,7 @@ public class ArticleController {
                 return new DataResponse(true, null, new ArticleInfo(
                         foundArticle.getTitle(), foundArticle.getAuthor().getUsername(),
                         foundArticle.getModified(), foundArticle.getView(),
-                        foundArticle.getSummary(), foundArticle.getContent())
+                        foundArticle.getSummary(), foundArticle.getContent(), tagNames, recommendArticleIdList)
                 );
             } else {
                 if (!password.equals(foundArticle.getPassword())) {
@@ -101,7 +135,7 @@ public class ArticleController {
                     return new DataResponse(true, null, new ArticleInfo(
                             foundArticle.getTitle(), foundArticle.getAuthor().getUsername(),
                             foundArticle.getModified(), foundArticle.getView(),
-                            foundArticle.getSummary(), foundArticle.getContent())
+                            foundArticle.getSummary(), foundArticle.getContent(), tagNames, recommendArticleIdList)
                     );
                 }
             }
@@ -111,15 +145,18 @@ public class ArticleController {
 
     @PostMapping("/create")
     public ApiResponse create(@RequestParam String title, @RequestParam String summary, @RequestParam String content,
-                              @RequestParam String password, HttpSession session) {
+                              @RequestParam(required = false, defaultValue = "") String password,
+                              @RequestParam(required = false) Set<String> tagNames, HttpSession session) {
         // Non-logged-in users aren't allowed to create an article.
         if (session.getAttribute("user") == null) {
             return new SimpleResponse(false, "Non-logged-in users aren't allowed to create an article.");
         } else {
             User user = userService.getUser((Integer) session.getAttribute("user"));
             if (!user.getType().equals("deleted") &&
-                    articleService.createArticle(user, title, summary, content, password)) {
-                userRepository.updateType("author", user.getId());
+                    articleService.createArticle(user, title, summary, content, password, tagNames)) {
+                if (!user.getType().equals("admin")) {
+                    userRepository.updateType("author", user.getId());
+                }
                 return new SimpleResponse(true, "");
             }
         }
@@ -127,8 +164,71 @@ public class ArticleController {
     }
 
     @PostMapping("/modify")
-    public ApiResponse modify() {
-        return new SimpleResponse(true, "");
+    public ApiResponse modify(@RequestParam String originTitle,
+                              @RequestParam String authorName,
+                              @RequestParam(required = false) String title,
+                              @RequestParam(required = false) String summary,
+                              @RequestParam(required = false) String content,
+                              @RequestParam(required = false) String password,
+                              @RequestParam(required = false) Set<String> tagNames,
+                              HttpSession session) {
+        if (session.getAttribute("user") == null) {
+            return new SimpleResponse(
+                    false, "Non-logged-in users don't have permission to modify this article."
+            );
+        } else {
+            User user = userService.getUser((Integer) session.getAttribute("user"));
+            if (user.getType().equals("user") || user.getType().equals("deleted") ||
+                    user.getType().equals("author") && !user.getUsername().equals(authorName)) {
+                return new SimpleResponse(false, "You don't have permission to modify this article.");
+            } else {
+                Article foundArticle =
+                        articleRepository.findByAuthorAndTitle(userRepository.findByUsername(authorName), originTitle);
+                if (foundArticle == null) {
+                    return new SimpleResponse(false, "This article doesn't exist.");
+                }
+                if (user.getType().equals("admin") ||
+                        user.getType().equals("author") && foundArticle.getAuthor().equals(user)) {
+                    if (foundArticle == null || foundArticle != null && foundArticle.getStatus().equals("deleted")) {
+                        return new SimpleResponse(false, "This article doesn't exist.");
+                    } else {
+                        if (articleRepository.findByAuthorAndTitle(userRepository.findByUsername(authorName), title) != null) {
+                            return new SimpleResponse(
+                                    false, "An author can't have multiple articles with the same title."
+                            );
+                        }
+                        if (title.length() != 0) {
+                            foundArticle.setTitle(title);
+                        }
+                        if (summary.length() != 0) {
+                            foundArticle.setSummary(summary);
+                        }
+                        if (content.length() != 0) {
+                            foundArticle.setContent(content);
+                        }
+                        foundArticle.setPassword(password);
+                        if (password.equals("")) {
+                            foundArticle.setStatus("normal");
+                        } else {
+                            foundArticle.setStatus("hidden");
+                        }
+                        Set<Tag> tagSet = new LinkedHashSet<>();
+                        Iterator<String> stringIterator = tagNames.iterator();
+                        while (stringIterator.hasNext()) {
+                            String s = stringIterator.next();
+                            if (tagRepository.findByName(s) == null) {
+                                return new SimpleResponse(false, "Some tags don't exist.");
+                            }
+                            tagSet.add(tagRepository.findByName(s));
+                        }
+                        foundArticle.setTags(tagSet);
+                        articleRepository.save(foundArticle);
+                        return new SimpleResponse(true, "");
+                    }
+                }
+            }
+        }
+        return new SimpleResponse(false, "Server error.");
     }
 
     @PostMapping("/delete")
@@ -165,9 +265,20 @@ public class ArticleController {
         }
     }
 
-    @PostMapping("/like")
-    public ApiResponse like() {
-        return new SimpleResponse(true, "");
+    @PostMapping("/like/{articleId}")
+    public ApiResponse like(@Valid @PathVariable(value = "articleId") Integer article, HttpServletRequest request) {
+        Article foundArticle = articleService.getArticle(article);
+        if (foundArticle == null || foundArticle != null && foundArticle.getStatus().equals("deleted")) {
+            return new SimpleResponse(false, "This article doesn't exist.");
+        } else {
+            String ip = likeHistoryService.getRemoteIP(request);
+            if (!likeHistoryRepository.getArticlesListByArticleAndIp(article, ip).isEmpty()) {
+                return new SimpleResponse(false, "You have liked this article.");
+            } else {
+                likeHistoryRepository.addArticleAndIpToLikeHistory(article, ip);
+                return new SimpleResponse(true, "");
+            }
+        }
     }
 
     @GetMapping("/search")

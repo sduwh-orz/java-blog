@@ -1,6 +1,7 @@
 package cn.edu.sdu.orz.dao;
 
 import cn.edu.sdu.orz.po.Article;
+import cn.edu.sdu.orz.po.LikeHistory;
 import cn.edu.sdu.orz.po.User;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;

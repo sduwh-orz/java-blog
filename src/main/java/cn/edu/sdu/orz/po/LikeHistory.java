@@ -48,4 +48,11 @@ public class LikeHistory {
     public void setArticle(Integer article) {
         this.article = article;
     }
+
+//    public LikeHistory() {}
+//
+//    public LikeHistory(Integer article, String ip) {
+//        this.article = article;
+//        this.ip = ip;
+//    }
 }

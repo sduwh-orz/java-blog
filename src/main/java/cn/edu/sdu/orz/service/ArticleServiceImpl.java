@@ -1,22 +1,28 @@
 package cn.edu.sdu.orz.service;
 
 import cn.edu.sdu.orz.dao.ArticleRepository;
+import cn.edu.sdu.orz.dao.TagArticleRepository;
+import cn.edu.sdu.orz.dao.TagRepository;
 import cn.edu.sdu.orz.po.Article;
 import cn.edu.sdu.orz.po.User;
+import cn.edu.sdu.orz.po.Tag;
 import org.hibernate.ObjectNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
 
 @Service
 public class ArticleServiceImpl implements ArticleService {
     @Autowired
     private ArticleRepository articleRepository;
+    @Autowired
+    private TagRepository tagRepository;
+    @Autowired
+    private TagArticleRepository tagArticleRepository;
 
     @Override
     public Article getArticle(Integer id) {
@@ -24,31 +30,14 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public Boolean createArticle(User author, String title, String summary, String content, String password) {
+    public Boolean createArticle(User author, String title, String summary,
+                                 String content, String password, Set<String> tagNames) {
         try {
-            Article prevArticle = articleRepository.findByAuthorAndTitle(author, title);
-            if (prevArticle != null) {
-                // There are articles with the specified author and the specified title.
-                if (prevArticle.getStatus().equals("deleted")) {
-                    articleRepository.updateStatus("normal", prevArticle.getId());
-                    prevArticle.setSummary(summary);
-                    prevArticle.setContent(content);
-                    prevArticle.setPassword(password);
-                    prevArticle.setView(0);
-                    if (password.equals("")) {
-                        prevArticle.setStatus("normal");
-                    } else {
-                        prevArticle.setStatus("hidden");
-                    }
-                    articleRepository.save(prevArticle);
-                    return true;
-                } else {
-                    // The author isn't allowed to have articles with the same name.
-                    return false;
+            Article article = articleRepository.findByAuthorAndTitle(author, title);
+            if (article == null || article != null && article.getStatus().equals("deleted")) {
+                if (article == null) {
+                    article = new Article();
                 }
-            } else {
-                // Create a new article.
-                Article article = new Article();
                 article.setAuthor(author);
                 article.setTitle(title);
                 article.setSummary(summary);
@@ -60,6 +49,16 @@ public class ArticleServiceImpl implements ArticleService {
                 } else {
                     article.setStatus("hidden");
                 }
+                Set<Tag> tagSet = new LinkedHashSet<>();
+                Iterator<String> stringIterator = tagNames.iterator();
+                while (stringIterator.hasNext()) {
+                    String s = stringIterator.next();
+                    if (tagRepository.findByName(s) == null) {
+                        return false;
+                    }
+                    tagSet.add(tagRepository.findByName(s));
+                }
+                article.setTags(tagSet);
                 articleRepository.save(article);
                 return true;
             }
@@ -84,10 +83,5 @@ public class ArticleServiceImpl implements ArticleService {
             e.printStackTrace();
         }
         return false;
-    }
-
-    @Override
-    public Boolean likeArticle() {
-        return null;
     }
 }
