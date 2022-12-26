@@ -9,6 +9,14 @@ import org.springframework.transaction.annotation.Transactional;
 public interface UserRepository extends JpaRepository<User, Integer> {
     @Transactional
     @Modifying
+    @Query("update User u set u.password = ?1 where u.id = ?2")
+    int updatePasswordById(String password, Integer id);
+    @Transactional
+    @Modifying
+    @Query("update User u set u.nickname = ?1 where u.id = ?2")
+    int updateNicknameById(String nickname, Integer id);
+    @Transactional
+    @Modifying
     @Query("update User u set u.type = ?1 where u.id = ?2")
     int updateType(String type, Integer id);
     User findByUsername(String username);

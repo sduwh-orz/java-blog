@@ -17,4 +17,6 @@ public interface CommentService {
     Boolean deleteComment(User user, Integer id);
 
     Boolean likeComment(Integer id);
+
+    Boolean modifyCommentByStatus(User user, Integer id, String status);
 }

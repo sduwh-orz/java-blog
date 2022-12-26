@@ -116,10 +116,30 @@ public class CommentServiceImpl implements CommentService {
             if (comment.getStatus().equals("deleted")) {
                 return false;
             }
-            if (!comment.getAuthor().getId().equals(user.getId())) {
+            if (!comment.getAuthor().getId().equals(user.getId()) && !user.getType().equals("admin") &&
+                    !comment.getArticle().getAuthor().getId().equals(user.getId())) {
                 return false;
             }
             commentRepository.updateContentById(content, id);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
+    public Boolean modifyCommentByStatus(User user, Integer id, String status) {
+        try {
+            Comment comment = commentRepository.findById(id).orElse(null);
+            if (comment == null) {
+                return false;
+            }
+            if (!comment.getAuthor().getId().equals(user.getId()) && !user.getType().equals("admin") &&
+                !comment.getArticle().getAuthor().getId().equals(user.getId())) {
+                return false;
+            }
+            commentRepository.updateStatusById(status, id);
             return true;
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,6 +1,7 @@
 package cn.edu.sdu.orz.controller;
 
 import cn.edu.sdu.orz.api.ApiResponse;
+import cn.edu.sdu.orz.api.CommentInfo;
 import cn.edu.sdu.orz.api.DataResponse;
 import cn.edu.sdu.orz.api.SimpleResponse;
 import cn.edu.sdu.orz.filter.CORSFilter;
@@ -8,6 +9,7 @@ import cn.edu.sdu.orz.po.User;
 import cn.edu.sdu.orz.service.CommentService;
 import cn.edu.sdu.orz.po.Comment;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -42,10 +44,22 @@ public class CommentController {
         if(lst.isEmpty()) {
             return new DataResponse(false, "nothing found", null);
         }
-        return new DataResponse(true, "",
-                //output id of comments
-                lst.stream().map(Comment::getId).collect(Collectors.toList())
-                );
+        List<CommentInfo> output = new ArrayList<>();
+        for(Comment c: lst) {
+            if(!c.getStatus().equals("normal"))
+                continue;
+            CommentInfo commentInfo = new CommentInfo(c.getId(),
+                    c.getAuthor().getId(),
+                    (c.getParent() != null ? c.getParent().getId() : 0),
+                    c.getAuthorName(),
+                    c.getEmail(),
+                    c.getIp(),
+                    c.getContent(),
+                    c.getCreated(),
+                    c.getModified());
+            output.add(commentInfo);
+        }
+        return new DataResponse(true, "", output);
     }
 
     @PostMapping(path="/create")
@@ -88,7 +102,7 @@ public class CommentController {
 
     @PostMapping(path="/modify")
     public ApiResponse modify(HttpSession session, @RequestParam String commentId,
-                              @RequestParam String content) {
+                              @RequestParam(required = false) String content, @RequestParam(required = false) String status) {
         Pattern pattern = Pattern.compile("[0-9]*");
         if(!(pattern.matcher(commentId).matches())) {
             return new DataResponse(false, "not a valid commentId", null);
@@ -97,11 +111,29 @@ public class CommentController {
         if(session.getAttribute("user") != null) {
             User user = userService.getUser((Integer) session.getAttribute("user"));
             if(user != null) {
-                if(commentService.modifyComment(user, id, content)) {
-                    return new SimpleResponse(true, "");
+                if(status == null && content == null) {
+                    return new SimpleResponse(false, "Invalid modify");
                 }
-                else {
-                    return new SimpleResponse(false, "You are not the author of this comment or the comment doesn't exist");
+                if(content != null) {
+                    if(commentService.modifyComment(user, id, content)) {
+                        return new SimpleResponse(true, "modify content successfully");
+                    }
+                    else {
+                        return new SimpleResponse(false, "You are not the author of this comment/article or you're not admin or the comment doesn't exist");
+                    }
+                }
+                if(status != null) {
+                    if(status.equals("normal") || status.equals("hidden") || status.equals("deleted")) {
+                        if(commentService.modifyCommentByStatus(user, id, status)) {
+                            return new SimpleResponse(true, "modify status successfully");
+                        }
+                        else {
+                            return new SimpleResponse(false, "You are not the author of this comment/article or you're not admin or the comment doesn't exist");
+                        }
+                    }
+                    else {
+                        return new SimpleResponse(false, "not a valid status");
+                    }
                 }
             }
         }

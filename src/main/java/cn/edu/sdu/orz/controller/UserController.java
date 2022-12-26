@@ -1,6 +1,7 @@
 package cn.edu.sdu.orz.controller;
 
 import cn.edu.sdu.orz.api.ApiResponse;
+import cn.edu.sdu.orz.dao.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import cn.edu.sdu.orz.api.DataResponse;
@@ -20,6 +21,8 @@ public class UserController {
     private CORSFilter corsFilter;
     @Autowired
     private UserService userService;
+    @Autowired
+    private UserRepository userRepository;
 
     @PostMapping(path="/register")
     public ApiResponse register(@RequestParam String username, @RequestParam String password, @RequestParam String nickname,
@@ -32,13 +35,16 @@ public class UserController {
 
     @PostMapping(path="/login")
     public ApiResponse login(@RequestParam String username, @RequestParam String password, HttpSession session) {
+        if(session.getAttribute("user") != null) {
+            return new SimpleResponse(false, "You've already logged in");
+        }
         User user = userService.getUser(username, password);
         if (user != null) {
             user.setPassword(null);
             session.setAttribute("user", user.getId());
             return new SimpleResponse(true, "");
         } else {
-            return new SimpleResponse(false, "用户名或密码错误");
+            return new SimpleResponse(false, "Wrong username or password");
         }
     }
 
@@ -48,7 +54,7 @@ public class UserController {
             session.removeAttribute("user");
             return new SimpleResponse(true, "");
         } else {
-            return new SimpleResponse(false, "未登录");
+            return new SimpleResponse(false, "Not logged in");
         }
     }
 
@@ -76,14 +82,33 @@ public class UserController {
     }
 
     @PostMapping(path="/modify")
-    public ApiResponse modify(HttpSession session) {
+    public ApiResponse modify(HttpSession session, @RequestParam String username, @RequestParam(required = false) String password,
+                              @RequestParam(required = false) String nickname, @RequestParam(required = false) String type) {
         if(session.getAttribute("user") != null) {
             User admin = userService.getUser((Integer) session.getAttribute("user"));
-            if(!(admin.getType().equals("admin"))) {
-                return new SimpleResponse(false, "此账号类型不是管理员");
+            User user = userService.getUser(username);
+            if(user == null) {
+                return new SimpleResponse(false, "Can't find user with username " + username);
+            }
+            if(!(admin.getType().equals("admin")) && !admin.getUsername().equals(user.getUsername())) {
+                return new SimpleResponse(false, "You're not admin or you can't modify others' information");
             }
             else {
-                return new SimpleResponse(true, "");
+                if(password != null) {
+                    userRepository.updatePasswordById(User.getHashedPassword(password), user.getId());
+                }
+                if(nickname != null) {
+                    userRepository.updateNicknameById(nickname, user.getId());
+                }
+                if(type != null) {
+                    if(type.equals("user") || type.equals("author") || type.equals("admin") || type.equals("deleted")) {
+                        userRepository.updateType(type, user.getId());
+                    }
+                    else {
+                        return new SimpleResponse(false, "Not a valid type");
+                    }
+                }
+                return new SimpleResponse(true, "Modify successfully");
             }
         }
         return new SimpleResponse(false, "Not logged in");
@@ -94,7 +119,7 @@ public class UserController {
         if(session.getAttribute("user") != null) {
             User admin = userService.getUser((Integer) session.getAttribute("user"));
             if(!(admin.getType().equals("admin"))) {
-                return new DataResponse(false, "此账号类型不是管理员", "null");
+                return new DataResponse(false, "You're not admin", "null");
             }
             else {
                 User user = userService.getUser(username);
