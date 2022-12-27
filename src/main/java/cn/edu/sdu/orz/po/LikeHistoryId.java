@@ -5,6 +5,7 @@ import org.hibernate.Hibernate;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
+import javax.validation.constraints.Pattern;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -15,6 +16,7 @@ public class LikeHistoryId implements Serializable {
     private Integer article;
 
     @Column(name = "ip", nullable = false, length = 64)
+    @Pattern(regexp = "^(\\d{1,3}\\.){3}\\d{1,3}$")
     private String ip;
 
     public Integer getArticle() {

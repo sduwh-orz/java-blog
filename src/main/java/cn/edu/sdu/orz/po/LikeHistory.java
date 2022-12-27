@@ -2,6 +2,7 @@ package cn.edu.sdu.orz.po;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import java.time.Instant;
 
@@ -19,6 +20,7 @@ public class LikeHistory {
     @Size(max = 64)
     @NotNull
     @Column(name = "ip", nullable = false, length = 64)
+    @Pattern(regexp = "^(\\d{1,3}\\.){3}\\d{1,3}$")
     private String ip;
 
     @NotNull

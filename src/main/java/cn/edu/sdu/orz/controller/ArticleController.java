@@ -5,11 +5,9 @@ import cn.edu.sdu.orz.dao.*;
 import cn.edu.sdu.orz.filter.CORSFilter;
 import cn.edu.sdu.orz.po.*;
 import cn.edu.sdu.orz.service.ArticleService;
-import cn.edu.sdu.orz.service.ArticleServiceImpl;
-import cn.edu.sdu.orz.service.LikeHistoryService;
+import cn.edu.sdu.orz.service.GetIPService;
 import cn.edu.sdu.orz.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -35,7 +33,7 @@ public class ArticleController {
     @Autowired
     private LikeHistoryRepository likeHistoryRepository;
     @Autowired
-    private LikeHistoryService likeHistoryService;
+    private GetIPService getIPService;
     @Autowired
     private TagRepository tagRepository;
     @Autowired
@@ -271,7 +269,7 @@ public class ArticleController {
         if (foundArticle == null || foundArticle != null && foundArticle.getStatus().equals("deleted")) {
             return new SimpleResponse(false, "This article doesn't exist.");
         } else {
-            String ip = likeHistoryService.getRemoteIP(request);
+            String ip = getIPService.getRemoteIP(request);
             if (!likeHistoryRepository.getArticlesListByArticleAndIp(article, ip).isEmpty()) {
                 return new SimpleResponse(false, "You have liked this article.");
             } else {

@@ -7,7 +7,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 @Service
-public class LikeHistoryServiceImpl implements LikeHistoryService{
+public class GetIPServiceImpl implements GetIPService{
     @Override
     public String getRemoteIP(HttpServletRequest request) {
         String ipAddress = null;

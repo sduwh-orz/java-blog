@@ -14,10 +14,12 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import cn.edu.sdu.orz.service.GetIPService;
 import cn.edu.sdu.orz.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 
@@ -32,6 +34,9 @@ public class CommentController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private GetIPService getIPService;
 
     @GetMapping(path="/get")
     public DataResponse get(@RequestParam String articleId) {
@@ -63,8 +68,8 @@ public class CommentController {
     }
 
     @PostMapping(path="/create")
-    public ApiResponse create(HttpSession session, @RequestParam String articleId,
-                              @RequestParam String ipAddr, @RequestParam String content,
+    public ApiResponse create(HttpSession session, HttpServletRequest request, @RequestParam String articleId,
+                              @RequestParam String content,
                               @RequestParam(required = false) String parent) {
         Pattern pattern = Pattern.compile("[0-9]*");
         if(!(pattern.matcher(articleId).matches())) {
@@ -79,6 +84,7 @@ public class CommentController {
             comment = null;
         }
         if(session.getAttribute("user") != null) {
+            String ipAddr = getIPService.getRemoteIP(request);
             User user = userService.getUser((Integer) session.getAttribute("user"));
             if(user != null) {
                 if (comment != null) {
