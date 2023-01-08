@@ -34,5 +34,8 @@ public interface ArticleRepository extends JpaRepository<Article, Integer> {
     @Query("select a from Article a where a.content like concat('%', :keyword, '%')")
     List<Article> getArticlesListByContent(@Param("keyword") String keyword);
 
+    List<Article> getArticlesListByAuthor(User author);
+
     Article findByAuthorAndTitle(User author, String title);
+
 }

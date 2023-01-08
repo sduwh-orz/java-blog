@@ -33,47 +33,13 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public Boolean createComment(User user, Integer id, String ipAddr, String content) {
+    public Boolean createComment(User user, Integer articleId, String ipAddr, String content, String nickname,
+                                 String email, Integer commentId) {
         try {
-            Integer authorId = user.getId();
-            Article article = articleRepository.findById(id).orElse(null);
-            if (article == null) {
-                return false;
-            }
-            //check if exists a comment which authorId equals, ip equals,
-            // content equals and type equals "deleted"
-            Comment prevComment = commentRepository.findByIdAndAuthorAndIpAndContent(article, user, ipAddr, content);
-            if (prevComment != null) {
-                if (prevComment.getStatus().equals("deleted")) {
-                    commentRepository.updateStatusById("normal", prevComment.getId());
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-
-            Comment comment = new Comment();
-            comment.setAuthor(user);
-            comment.setArticle(article);
-            comment.setIp(ipAddr);
-            comment.setContent(content);
-            comment.setStatus("normal");
-            comment.setAuthorName(user.getNickname());
-            comment.setEmail(user.getEmail());
-            commentRepository.save(comment);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    @Override
-    public Boolean createComment(User user, Integer articleId, String ipAddr, String content, Integer commentId) {
-        try {
-            Integer authorId = user.getId();
-            Article article = articleRepository.findById(commentId).orElse(null);
-            Comment parentComment = commentRepository.findById(commentId).orElse(null);
+            Article article = articleRepository.findById(articleId).orElse(null);
+            Comment parentComment = null;
+            if (commentId != -1)
+                parentComment = commentRepository.findById(commentId).orElse(null);
             if (article == null) {
                 return false;
             }
@@ -90,14 +56,22 @@ public class CommentServiceImpl implements CommentService {
             }
 
             Comment comment = new Comment();
-            comment.setAuthor(user);
+            if (user != null) {
+                comment.setAuthor(user);
+                comment.setAuthorName(user.getNickname());
+                comment.setEmail(user.getEmail());
+            } else {
+                comment.setAuthorName(nickname);
+                comment.setEmail(email);
+            }
             comment.setArticle(article);
             comment.setIp(ipAddr);
             comment.setContent(content);
             comment.setStatus("normal");
-            comment.setAuthorName(user.getNickname());
-            comment.setEmail(user.getEmail());
-            comment.setParent(parentComment);
+            if (parentComment != null) {
+                comment.setParent(parentComment);
+            }
+            comment.setLikeNum(0);
             commentRepository.save(comment);
             return true;
         } catch (Exception e) {

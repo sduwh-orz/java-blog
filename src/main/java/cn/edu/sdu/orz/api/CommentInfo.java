@@ -13,11 +13,12 @@ public class CommentInfo {
     private String content;
     private Instant created;
     private Instant modified;
+    private Integer likeNum;
 
     public CommentInfo() {
     }
 
-    public CommentInfo(Integer id, Integer author, Integer parent, String authorName, String email, String ip, String content, Instant created, Instant modified) {
+    public CommentInfo(Integer id, Integer author, Integer parent, String authorName, String email, String ip, String content, Instant created, Instant modified, Integer likeNum) {
         this.id = id;
         this.author = author;
         this.parent = parent;
@@ -27,6 +28,7 @@ public class CommentInfo {
         this.content = content;
         this.created = created;
         this.modified = modified;
+        this.likeNum = likeNum;
     }
 
     public Integer getId() {
@@ -99,5 +101,13 @@ public class CommentInfo {
 
     public void setModified(Instant modified) {
         this.modified = modified;
+    }
+
+    public Integer getLikeNum() {
+        return likeNum;
+    }
+
+    public void setLikeNum(Integer likeNum) {
+        this.likeNum = likeNum;
     }
 }

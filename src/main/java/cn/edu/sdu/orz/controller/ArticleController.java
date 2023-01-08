@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.swing.text.html.Option;
 import javax.validation.Valid;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -162,8 +163,7 @@ public class ArticleController {
     }
 
     @PostMapping("/modify")
-    public ApiResponse modify(@RequestParam String originTitle,
-                              @RequestParam String authorName,
+    public ApiResponse modify(@RequestParam Integer articleId,
                               @RequestParam(required = false) String title,
                               @RequestParam(required = false) String summary,
                               @RequestParam(required = false) String content,
@@ -176,90 +176,65 @@ public class ArticleController {
             );
         } else {
             User user = userService.getUser((Integer) session.getAttribute("user"));
+            Optional<Article> article =
+                    articleRepository.findById(articleId);
+            if (article.isEmpty() || article.get().getStatus().equals("deleted")) {
+                return new SimpleResponse(false, "This article doesn't exist.");
+            }
+            Article foundArticle = article.get();
             if (user.getType().equals("user") || user.getType().equals("deleted") ||
-                    user.getType().equals("author") && !user.getUsername().equals(authorName)) {
+                    user.getType().equals("author") && !Objects.equals(user.getId(), foundArticle.getAuthor().getId())) {
                 return new SimpleResponse(false, "You don't have permission to modify this article.");
             } else {
-                Article foundArticle =
-                        articleRepository.findByAuthorAndTitle(userRepository.findByUsername(authorName), originTitle);
-                if (foundArticle == null) {
-                    return new SimpleResponse(false, "This article doesn't exist.");
+                if (title != null && title.length() != 0) {
+                    foundArticle.setTitle(title);
                 }
-                if (user.getType().equals("admin") ||
-                        user.getType().equals("author") && foundArticle.getAuthor().equals(user)) {
-                    if (foundArticle == null || foundArticle != null && foundArticle.getStatus().equals("deleted")) {
-                        return new SimpleResponse(false, "This article doesn't exist.");
+                if (summary != null && summary.length() != 0) {
+                    foundArticle.setSummary(summary);
+                }
+                if (content != null && content.length() != 0) {
+                    foundArticle.setContent(content);
+                }
+                foundArticle.setPassword(password);
+                if (password != null) {
+                    if (password.equals("")) {
+                        foundArticle.setStatus("normal");
                     } else {
-                        if (articleRepository.findByAuthorAndTitle(userRepository.findByUsername(authorName), title) != null) {
-                            return new SimpleResponse(
-                                    false, "An author can't have multiple articles with the same title."
-                            );
-                        }
-                        if (title.length() != 0) {
-                            foundArticle.setTitle(title);
-                        }
-                        if (summary.length() != 0) {
-                            foundArticle.setSummary(summary);
-                        }
-                        if (content.length() != 0) {
-                            foundArticle.setContent(content);
-                        }
-                        foundArticle.setPassword(password);
-                        if (password.equals("")) {
-                            foundArticle.setStatus("normal");
-                        } else {
-                            foundArticle.setStatus("hidden");
-                        }
-                        Set<Tag> tagSet = new LinkedHashSet<>();
-                        Iterator<String> stringIterator = tagNames.iterator();
-                        while (stringIterator.hasNext()) {
-                            String s = stringIterator.next();
-                            if (tagRepository.findByName(s) == null) {
-                                return new SimpleResponse(false, "Some tags don't exist.");
-                            }
-                            tagSet.add(tagRepository.findByName(s));
-                        }
-                        foundArticle.setTags(tagSet);
-                        articleRepository.save(foundArticle);
-                        return new SimpleResponse(true, "");
+                        foundArticle.setStatus("hidden");
                     }
                 }
+                Set<Tag> tagSet = new LinkedHashSet<>();
+                if (tagNames != null) {
+                    Iterator<String> stringIterator = tagNames.iterator();
+                    while (stringIterator.hasNext()) {
+                        String s = stringIterator.next();
+                        if (tagRepository.findByName(s) == null) {
+                            return new SimpleResponse(false, "Some tags don't exist.");
+                        }
+                        tagSet.add(tagRepository.findByName(s));
+                    }
+                    foundArticle.setTags(tagSet);
+                }
+                articleRepository.save(foundArticle);
+                return new SimpleResponse(true, "");
             }
         }
-        return new SimpleResponse(false, "Server error.");
     }
 
     @PostMapping("/delete")
-    public ApiResponse delete(@RequestParam String authorName, @RequestParam String title, HttpSession session) {
+    public ApiResponse delete(@RequestParam Integer articleId, HttpSession session) {
         if (session.getAttribute("user") == null) {
             return new SimpleResponse(false, "Non-logged-in users can't delete this article.");
         }
         User user = userService.getUser((Integer) session.getAttribute("user"));
         if (user.getType().equals("user") || user.getType().equals("deleted")) {
             return new SimpleResponse(false, "You don't have permission to delete this article.");
-        } else if (user.getType().equals("admin")) {
-            if (userService.getUser(authorName) == null) {
-                return new SimpleResponse(false, "This author doesn't exist.");
-            } else {
-                if (articleService.deleteArticle(userService.getUser(authorName), title)) {
-                    return new SimpleResponse(true, "");
-                } else {
-                    return new SimpleResponse(false, "This article doesn't exist.");
-                }
-            }
         } else {
             // The "author" user can delete his articles which aren't "deleted".
-            if (articleService.deleteArticle(user, title)) {
+            if (articleService.deleteArticle(user, articleId)) {
                 return new SimpleResponse(true, "");
-            } else {
-                // Other "author" users can't delete this article.
-                if (articleRepository.findByAuthorAndTitle(user, title) == null) {
-                    return new SimpleResponse(false, "You don't have permission to delete this article.");
-                } else {
-                    // The "author" user can't delete his articles which are "deleted".
-                    return new SimpleResponse(false, "This article doesn't exist.");
-                }
             }
+            return new SimpleResponse(false, "Article is not present or user cannot delete this article");
         }
     }
 
@@ -310,6 +285,30 @@ public class ArticleController {
     @GetMapping("/recommend")
     public ApiResponse recommend() {
         return new SimpleResponse(true, "");
+    }
+
+    @GetMapping("/list")
+    public ApiResponse list(HttpSession session) {
+
+        if (session.getAttribute("user") == null) {
+            return new SimpleResponse(false, "You are not logged in");
+        }
+        User user = userService.getUser((Integer) session.getAttribute("user"));
+        List<Article> articleList = new ArrayList<>();
+        articleList.addAll(articleRepository.getArticlesListByAuthor(user));
+        List<ArticleDetailedInfo> articleSearchInfoList = new ArrayList<>();
+        Iterator<Article> it = articleList.iterator();
+        while (it.hasNext()) {
+            Article article = it.next();
+            ArticleDetailedInfo articleSearchInfo = new ArticleDetailedInfo(
+                    article.getId(), article.getTitle(), article.getAuthor().getUsername(),
+                    article.getModified(), article.getCreated(), article.getView(), article.getSummary(), article.getContent()
+            );
+            if (!article.getStatus().equals("deleted")) {
+                articleSearchInfoList.add(articleSearchInfo);
+            }
+        }
+        return new DataResponse(true, "", articleSearchInfoList);
     }
 
 }

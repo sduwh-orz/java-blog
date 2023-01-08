@@ -49,16 +49,18 @@ public class ArticleServiceImpl implements ArticleService {
                 } else {
                     article.setStatus("hidden");
                 }
-                Set<Tag> tagSet = new LinkedHashSet<>();
-                Iterator<String> stringIterator = tagNames.iterator();
-                while (stringIterator.hasNext()) {
-                    String s = stringIterator.next();
-                    if (tagRepository.findByName(s) == null) {
-                        return false;
+                if (tagNames != null) {
+                    Set<Tag> tagSet = new LinkedHashSet<>();
+                    Iterator<String> stringIterator = tagNames.iterator();
+                    while (stringIterator.hasNext()) {
+                        String s = stringIterator.next();
+                        if (tagRepository.findByName(s) == null) {
+                            return false;
+                        }
+                        tagSet.add(tagRepository.findByName(s));
                     }
-                    tagSet.add(tagRepository.findByName(s));
+                    article.setTags(tagSet);
                 }
-                article.setTags(tagSet);
                 articleRepository.save(article);
                 return true;
             }
@@ -69,15 +71,21 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public Boolean deleteArticle(User author, String title) {
+    public Boolean deleteArticle(User operator, Integer articleId) {
         try {
-            Article article = articleRepository.findByAuthorAndTitle(author, title);
-            if (article != null) {
-                if (article.getStatus().equals("deleted")) {
+            Optional<Article> article = articleRepository.findById(articleId);
+            if (article.isPresent()) {
+                if (!Objects.equals(operator.getType(), "admin") &&
+                        !Objects.equals(operator.getId(), article.get().getAuthor().getId())) {
                     return false;
                 }
-                articleRepository.updateStatus("deleted", article.getId());
+                if (article.get().getStatus().equals("deleted")) {
+                    return false;
+                }
+                articleRepository.updateStatus("deleted", article.get().getId());
                 return true;
+            } else {
+                return false;
             }
         } catch (Exception e) {
             e.printStackTrace();

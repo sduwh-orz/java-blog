@@ -54,14 +54,15 @@ public class CommentController {
             if(!c.getStatus().equals("normal"))
                 continue;
             CommentInfo commentInfo = new CommentInfo(c.getId(),
-                    c.getAuthor().getId(),
+                    (c.getAuthor() != null ? c.getAuthor().getId() : null),
                     (c.getParent() != null ? c.getParent().getId() : 0),
                     c.getAuthorName(),
                     c.getEmail(),
                     c.getIp(),
                     c.getContent(),
                     c.getCreated(),
-                    c.getModified());
+                    c.getModified(),
+                    c.getLikeNum());
             output.add(commentInfo);
         }
         return new DataResponse(true, "", output);
@@ -69,7 +70,8 @@ public class CommentController {
 
     @PostMapping(path="/create")
     public ApiResponse create(HttpSession session, HttpServletRequest request, @RequestParam String articleId,
-                              @RequestParam String content,
+                              @RequestParam String content, @RequestParam(required = false) String nickname,
+                              @RequestParam(required = false) String email,
                               @RequestParam(required = false) String parent) {
         Pattern pattern = Pattern.compile("[0-9]*");
         if(!(pattern.matcher(articleId).matches())) {
@@ -81,29 +83,18 @@ public class CommentController {
             comment = Integer.valueOf(parent);
         }
         else {
-            comment = null;
+            comment = -1;
         }
-        if(session.getAttribute("user") != null) {
-            String ipAddr = getIPService.getRemoteIP(request);
-            User user = userService.getUser((Integer) session.getAttribute("user"));
-            if(user != null) {
-                if (comment != null) {
-                    if (commentService.createComment(user, article, ipAddr, content, comment)) {
-                        return new SimpleResponse(true, "");
-                    } else {
-                        return new SimpleResponse(false, "Exists a same comment which created by you");
-                    }
-                }
-                else {
-                    if (commentService.createComment(user, article, ipAddr, content)) {
-                        return new SimpleResponse(true, "");
-                    } else {
-                        return new SimpleResponse(false, "Exists a same comment which created by you");
-                    }
-                }
-            }
+        String ipAddr = getIPService.getRemoteIP(request);
+        User user = null;
+        if (session.getAttribute("user") != null) {
+            user = userService.getUser((Integer) session.getAttribute("user"));
         }
-        return new SimpleResponse(false, "not logged in");
+        if (commentService.createComment(user, article, ipAddr, content, nickname, email, comment)) {
+            return new SimpleResponse(true, "");
+        } else {
+            return new SimpleResponse(false, "Exists a same comment which created by you");
+        }
     }
 
     @PostMapping(path="/modify")

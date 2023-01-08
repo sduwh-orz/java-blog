@@ -12,5 +12,5 @@ public interface ArticleService {
     Article getArticle(Integer id);
     Boolean createArticle(User author, String title, String summary,
                           String content, String password, Set<String> tagNames);
-    Boolean deleteArticle(User author, String title);
+    Boolean deleteArticle(User operator, Integer articleId);
 }

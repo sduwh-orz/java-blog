@@ -60,25 +60,17 @@ public class UserController {
 
     @GetMapping(path="/info")
     public DataResponse info(HttpSession session, @RequestParam(required = false) String username) {
-        if(session.getAttribute("user") != null) {
-            if(username != null) {
-                User user = userService.getUser(username);
-                if (user != null) {
-                    return new DataResponse(true, "", new UserInfo(user.getUsername(), user.getNickname(),
-                            user.getEmail(), user.getType()));
-                } else {
-                    return new DataResponse(false, "Can't find user with username " + username, null);
-                }
-            }
-            else {
-                User user = userService.getUser((Integer) session.getAttribute("user"));
-                if (user != null) {
-                    return new DataResponse(true, "", new UserInfo(user.getUsername(), user.getNickname(),
-                            user.getEmail(), user.getType()));
-                }
-            }
+        User user = null;
+        if (username != null) {
+            user = userService.getUser(username);
+        } else if (session.getAttribute("user") != null) {
+            user = userService.getUser((Integer) session.getAttribute("user"));
         }
-        return new DataResponse(false, "Not logged in", null);
+        if (user != null) {
+            return new DataResponse(true, "", new UserInfo(user.getUsername(), user.getNickname(),
+                    user.getEmail(), user.getType()));
+        }
+        return new DataResponse(false, "Can't find user with username", null);
     }
 
     @PostMapping(path="/modify")
