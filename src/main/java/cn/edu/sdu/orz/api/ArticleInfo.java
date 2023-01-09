@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 public class ArticleInfo {
+    private Integer id;
     private String title;
     private String authorName;
     private Instant modified;
@@ -19,8 +20,9 @@ public class ArticleInfo {
     @JsonProperty("recommendArticleId")
     private List<Integer> recommendArticleIdList;
 
-    public ArticleInfo(String title, String authorName, Instant modified, Integer view,
+    public ArticleInfo(Integer id, String title, String authorName, Instant modified, Integer view,
                        String summary, String content, Set<String> tagNames, List<Integer> recommendArticleIdList) {
+        this.id = id;
         this.title = title;
         this.authorName = authorName;
         this.modified = modified;
@@ -29,6 +31,14 @@ public class ArticleInfo {
         this.content = content;
         this.tagNames = tagNames;
         this.recommendArticleIdList = recommendArticleIdList;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getAuthorName() {

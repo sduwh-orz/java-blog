@@ -5,6 +5,8 @@ import cn.edu.sdu.orz.po.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class TagServiceImpl implements TagService{
     @Autowired
@@ -13,6 +15,10 @@ public class TagServiceImpl implements TagService{
     @Override
     public Tag getTag(Integer id) {
         return tagRepository.findById(id).orElse(null);
+    }
+    @Override
+    public Tag getTag(String id) {
+        return tagRepository.findByName(id);
     }
 
     @Override
@@ -41,6 +47,11 @@ public class TagServiceImpl implements TagService{
         return false;
     }
 
+    @Override
+    public List<Tag> getAllTag() {
+        return tagRepository.findAll();
+    }
+
 //    @Override
 //    public Boolean deleteTag(String name) {
 //        try {
@@ -57,4 +68,5 @@ public class TagServiceImpl implements TagService{
 //        }
 //        return false;
 //    }
+
 }

@@ -22,7 +22,7 @@ public class ArticleDetailedInfo {
         this.title = title;
         this.authorName = authorName;
         this.modified = modified;
-        this.modified = created;
+        this.created = created;
         this.view = view;
         this.summary = summary;
         this.content = content;

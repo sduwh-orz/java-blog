@@ -12,6 +12,8 @@ import cn.edu.sdu.orz.po.User;
 import cn.edu.sdu.orz.service.UserService;
 
 import javax.servlet.http.HttpSession;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @CrossOrigin
@@ -67,7 +69,7 @@ public class UserController {
             user = userService.getUser((Integer) session.getAttribute("user"));
         }
         if (user != null) {
-            return new DataResponse(true, "", new UserInfo(user.getUsername(), user.getNickname(),
+            return new DataResponse(true, "", new UserInfo(user.getId(), user.getUsername(), user.getNickname(),
                     user.getEmail(), user.getType()));
         }
         return new DataResponse(false, "Can't find user with username", null);
@@ -128,5 +130,12 @@ public class UserController {
             }
         }
         return new DataResponse(false, "Not logged in", "null");
+    }
+    @GetMapping(path="/list")
+    public DataResponse list() {
+        List<User> users = userRepository.findAll();
+        List<UserInfo> results = users.stream().map((u)-> new UserInfo(u.getId(), u.getUsername(), u.getNickname(),
+                    u.getEmail(), u.getType())).collect(Collectors.toList());
+        return new DataResponse(true, "", results);
     }
 }

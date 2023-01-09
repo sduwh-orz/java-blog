@@ -83,6 +83,7 @@ public class ArticleController {
                 articleRepository.updateView(id);
                 foundArticle.setView(foundArticle.getView() + 1);
                 return new DataResponse(true, null, new ArticleInfo(
+                        foundArticle.getId(),
                         foundArticle.getTitle(), foundArticle.getAuthor().getUsername(),
                         foundArticle.getModified(), foundArticle.getView(),
                         foundArticle.getSummary(), foundArticle.getContent(), tagNames, recommendArticleIdList)
@@ -92,6 +93,7 @@ public class ArticleController {
                     articleRepository.updateView(id);
                     foundArticle.setView(foundArticle.getView() + 1);
                     return new DataResponse(true, null, new ArticleInfo(
+                            foundArticle.getId(),
                             foundArticle.getTitle(), foundArticle.getAuthor().getUsername(),
                             foundArticle.getModified(), foundArticle.getView(),
                             foundArticle.getSummary(), foundArticle.getContent(), tagNames, recommendArticleIdList)
@@ -109,6 +111,7 @@ public class ArticleController {
                     foundArticle.setView(foundArticle.getView() + 1);
                 }
                 return new DataResponse(true, null, new ArticleInfo(
+                        foundArticle.getId(),
                         foundArticle.getTitle(), foundArticle.getAuthor().getUsername(),
                         foundArticle.getModified(), foundArticle.getView(),
                         foundArticle.getSummary(), foundArticle.getContent(), tagNames, recommendArticleIdList)
@@ -121,6 +124,7 @@ public class ArticleController {
                     foundArticle.setView(foundArticle.getView() + 1);
                 }
                 return new DataResponse(true, null, new ArticleInfo(
+                        foundArticle.getId(),
                         foundArticle.getTitle(), foundArticle.getAuthor().getUsername(),
                         foundArticle.getModified(), foundArticle.getView(),
                         foundArticle.getSummary(), foundArticle.getContent(), tagNames, recommendArticleIdList)
@@ -132,6 +136,7 @@ public class ArticleController {
                     articleRepository.updateView(id);
                     foundArticle.setView(foundArticle.getView() + 1);
                     return new DataResponse(true, null, new ArticleInfo(
+                            foundArticle.getId(),
                             foundArticle.getTitle(), foundArticle.getAuthor().getUsername(),
                             foundArticle.getModified(), foundArticle.getView(),
                             foundArticle.getSummary(), foundArticle.getContent(), tagNames, recommendArticleIdList)
@@ -267,13 +272,20 @@ public class ArticleController {
                 Comparator.comparing(Article::getView).thenComparing(Article::getModified).reversed()
         ).collect(Collectors.toList());
         // Write articleList to articleSearchInfoList.
-        List<ArticleSearchInfo> articleSearchInfoList = new ArrayList<>();
+        List<ArticleInfo> articleSearchInfoList = new ArrayList<>();
         Iterator<Article> it = articleList.iterator();
         while (it.hasNext()) {
             Article article = it.next();
-            ArticleSearchInfo articleSearchInfo = new ArticleSearchInfo(
+            // Get relevant tags for this article.
+            Set<String> tagNames = new LinkedHashSet<>();
+            Iterator<Tag> it2 = article.getTags().iterator();
+            while (it2.hasNext()) {
+                Tag tag = it2.next();
+                tagNames.add(tag.getName());
+            }
+            ArticleInfo articleSearchInfo = new ArticleInfo(
                     article.getId(), article.getTitle(), article.getAuthor().getUsername(),
-                    article.getModified(), article.getView(), article.getSummary()
+                    article.getModified(), article.getView(), article.getSummary(), article.getContent(), tagNames, List.of()
             );
             if (!article.getStatus().equals("deleted")) {
                 articleSearchInfoList.add(articleSearchInfo);
@@ -296,6 +308,25 @@ public class ArticleController {
         User user = userService.getUser((Integer) session.getAttribute("user"));
         List<Article> articleList = new ArrayList<>();
         articleList.addAll(articleRepository.getArticlesListByAuthor(user));
+        List<ArticleDetailedInfo> articleSearchInfoList = new ArrayList<>();
+        Iterator<Article> it = articleList.iterator();
+        while (it.hasNext()) {
+            Article article = it.next();
+            ArticleDetailedInfo articleSearchInfo = new ArticleDetailedInfo(
+                    article.getId(), article.getTitle(), article.getAuthor().getUsername(),
+                    article.getModified(), article.getCreated(), article.getView(), article.getSummary(), article.getContent()
+            );
+            if (!article.getStatus().equals("deleted")) {
+                articleSearchInfoList.add(articleSearchInfo);
+            }
+        }
+        return new DataResponse(true, "", articleSearchInfoList);
+    }
+    @GetMapping("/list_all")
+    public ApiResponse listAll() {
+
+        List<Article> articleList = new ArrayList<>();
+        articleList.addAll(articleRepository.findAll());
         List<ArticleDetailedInfo> articleSearchInfoList = new ArrayList<>();
         Iterator<Article> it = articleList.iterator();
         while (it.hasNext()) {

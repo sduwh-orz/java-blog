@@ -1,16 +1,26 @@
 package cn.edu.sdu.orz.api;
 
 public class UserInfo {
+    private Integer id;
     private String username;
     private String nickname;
     private String email;
     private String type;
 
-    public UserInfo(String username, String nickname, String email, String type) {
+    public UserInfo(Integer id, String username, String nickname, String email, String type) {
+        this.id = id;
         this.username = username;
         this.nickname = nickname;
         this.email = email;
         this.type = type;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getUsername() {

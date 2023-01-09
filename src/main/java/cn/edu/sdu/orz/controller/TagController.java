@@ -1,9 +1,6 @@
 package cn.edu.sdu.orz.controller;
 
-import cn.edu.sdu.orz.api.ApiResponse;
-import cn.edu.sdu.orz.api.ArticleSearchInfo;
-import cn.edu.sdu.orz.api.DataResponse;
-import cn.edu.sdu.orz.api.SimpleResponse;
+import cn.edu.sdu.orz.api.*;
 import cn.edu.sdu.orz.dao.ArticleRepository;
 import cn.edu.sdu.orz.dao.TagRepository;
 import cn.edu.sdu.orz.po.Article;
@@ -17,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @CrossOrigin
@@ -33,6 +31,22 @@ public class TagController {
     @Autowired
     private UserService userService;
 
+    @GetMapping("/")
+    public ApiResponse getAll() {
+        List<Tag> tag = tagService.getAllTag();
+        List<TagInfo> result = tag.stream().map((t)-> new TagInfo(t.getId(), t.getName(), t.getDescription(), t.getCreated())).collect(Collectors.toList());
+        return new DataResponse(true, "", result);
+    }
+    @GetMapping("/get")
+    public ApiResponse get(@RequestParam String name) {
+        Tag tag = tagService.getTag(name);
+        if (tag != null) {
+            TagInfo info = new TagInfo(tag.getId(), tag.getName(), tag.getDescription(), tag.getCreated());
+            return new DataResponse(true, "", info);
+        } else {
+            return new DataResponse(false, "Tag doesn't exist", null);
+        }
+    }
     @PostMapping("/create")
     public ApiResponse create(@RequestParam String name, @RequestParam String description, HttpSession session) {
         if (session.getAttribute("user") == null) {
