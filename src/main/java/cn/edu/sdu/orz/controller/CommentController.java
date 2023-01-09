@@ -90,6 +90,9 @@ public class CommentController {
         if (session.getAttribute("user") != null) {
             user = userService.getUser((Integer) session.getAttribute("user"));
         }
+        else {
+            return new SimpleResponse(false, "Not logged in");
+        }
         if (commentService.createComment(user, article, ipAddr, content, nickname, email, comment)) {
             return new SimpleResponse(true, "");
         } else {

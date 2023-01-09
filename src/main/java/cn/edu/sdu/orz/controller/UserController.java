@@ -84,6 +84,9 @@ public class UserController {
             if(user == null) {
                 return new SimpleResponse(false, "Can't find user with username " + username);
             }
+            if(admin.getUsername().equals(user.getUsername()) && !admin.getType().equals("admin") && type.equals("admin")) {
+                return new SimpleResponse(false, "You're not admin");
+            }
             if(!(admin.getType().equals("admin")) && !admin.getUsername().equals(user.getUsername())) {
                 return new SimpleResponse(false, "You're not admin or you can't modify others' information");
             }
