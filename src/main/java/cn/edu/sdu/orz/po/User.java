@@ -25,7 +25,7 @@ public class User {
     private String password;
 
     @Column(name = "email", nullable = false, length = 64)
-    @Email(regexp = "^([a-zA-z0-9_\\.-]+)@([\\\\da-zA-Z\\.-]+)\\.([a-z\\.]{2,6})$")
+    @Email(regexp = "^([a-zA-z0-9_\\.-]+)@([\\\\da-zA-Z0-9\\.-]+)\\.([a-z\\.]{2,6})$")
     private String email;
 
     @Column(name = "nickname", nullable = false, length = 16)
